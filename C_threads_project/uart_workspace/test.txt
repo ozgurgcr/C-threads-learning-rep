@@ -1,0 +1,22 @@
+//opening a device 
+
+#include<fcntl.h>
+const char device[] = "/dev/ttyUSB0";
+fd = open(device, O_RDWR | O_NOCTTY | O_NDELAY);
+if(fd == -1) {
+  printf( "failed to open port\n" );
+}
+
+device  : the path to the serial port 
+fd      : the returned file handle for the device. -1 if an error occured. 
+O_RDWR  : opens the port for reading and writing 
+O_NOCTTY: the port never becomes the controlling terminal of the process
+O_NDELAY: Use non-blocking I/O. On some systems this also means the RS232 DCD signal line is ignored.
+
+// close a device 
+
+close(fd)
+
+//serial device configuration 
+
+devamı: https://en.wikibooks.org/wiki/Serial_Programming/termios .
