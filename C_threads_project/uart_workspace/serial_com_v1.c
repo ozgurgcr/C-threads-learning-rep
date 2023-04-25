@@ -6,32 +6,52 @@
 #include<fcntl.h>               //File control definitions 
 #include<errno.h>               //error number definitions 
 #include<string.h>              //string function definitions 
-                                //fd - file descriptor
+
+struct termios serial_port_config;                               
+int serial_port_fd;         //fd - file descriptor
+
+void* read_thread(){
+    char rx_buffer[256];
+    while(1){
+        int num_bytes = read(serial_port_fd, &rx_buffer, sizeof rx_buffer);
+        printf("%s", rx_buffer);
+    } 
+    exit(0);
+}
 
 int main(){
-    int serial_port;
-    serial_port = open("/dev/ttyUSB0", O_RDWR);             //serial port is our file descriptor(fd)
-    if(serial_port == -1){
-        printf("failed to open port\n");
-        exit(0);
-    }else 
-        printf("port is open...\n");
-    if (!isatty(serial_port))
+    
+    serial_port_fd = open("/dev/ttyUSB0", O_RDWR);             //serial port is our file descriptor(fd)
+    while(serial_port_fd == -1){
+        if(serial_port_fd == -1){
+            printf("failed to open port\n");
+            sleep(1);
+        }else 
+            printf("port is open...\n");
+    }
+    if (!isatty(serial_port_fd))
         printf("device is not a tty device!");
+    
 
-    struct termios serial_port_config;
-
-    if(tcgetattr(serial_port, &serial_port_config) != 0){
+    if(tcgetattr(serial_port_fd, &serial_port_config) != 0){
         printf("error %i from tcgetattr: %s\n",errno,strerror(errno));
         exit(0);
     }
     cfsetispeed(&serial_port_config, B115200);
     cfsetospeed(&serial_port_config, B115200);
     cfmakeraw(&serial_port_config);
-    tcsetattr(serial_port,TCSANOW,&serial_port_config);
+    tcsetattr(serial_port_fd,TCSANOW,&serial_port_config);
 
-    // write(serial_port, const void *tx_buffer, size_t tx_size);
-    // read(serial_port, void *rx_buffer, size_t rx_size);
+    int rc;
+    pthread_t t_id; 
+    rc = pthread_create(&t_id,NULL,read_thread,NULL);
+    pthread_join(t_id, NULL);
 
-    close(serial_port);             //closing the serial port
+    // write(serial_port_fd, const void *tx_buffer, size_t tx_size);
+    // char rx_buffer[256];
+    // int num_bytes = read(serial_port_fd, &rx_buffer, sizeof rx_buffer);
+    // printf("%s", rx_buffer);
+    // printf("\nport is open \n");
+    close(serial_port_fd);             //closing the serial port
 }
+
